@@ -74,9 +74,9 @@
   .btn-primary:hover{background:var(--navy-800);}
   .btn-ghost{background:#fff;color:var(--blue-600);border:1px solid var(--border);}
   .btn-ghost:hover{background:var(--blue-50);}
-  .btn-quicklink{background:var(--blue-600);color:#fff;border:1px solid var(--blue-600);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);padding:6px 12px;font-size:12px;display:inline-flex;align-items:center;gap:6px;}
-  .btn-quicklink:hover{background:var(--navy-800);border-color:var(--navy-800);}
-  .btn-quicklink .ql-svg{flex:0 0 auto;}
+  .btn-quicklink{background:var(--tile-bg,#eef2fb);color:var(--tile-fg,#1b3fae);border:1px solid var(--tile-bd,#d7e1fb);padding:6px 12px;font-size:12px;display:inline-flex;align-items:center;gap:6px;transition:filter .15s, box-shadow .15s;}
+  .btn-quicklink:hover{filter:saturate(1.25) brightness(.97);box-shadow:var(--shadow);}
+  .btn-quicklink .ql-svg{flex:0 0 auto;stroke:currentColor;}
   .btn-pastel-add{background:var(--st-approved-bg);color:var(--st-approved-fg);border:1px solid #bfe6cc;padding:8px 16px;font-size:13px;font-weight:700;}
   .btn-pastel-add:hover{filter:brightness(.96);}
   .btn-pastel-review{background:var(--st-changes-bg);color:var(--st-changes-fg);border:1px solid #f0dca0;padding:8px 16px;font-size:13px;font-weight:700;}
@@ -98,17 +98,17 @@
   .module-tile .mt-desc{font-size:11.5px;color:var(--text-600);margin-bottom:8px;}
   .module-tile .mt-stat{font-size:11px;font-weight:700;color:var(--blue-600);}
 
-  /* ---------- Section quick-link tiles (square icon cards) ---------- */
+  /* ---------- Section quick-link tiles (square pastel icon cards) ---------- */
   .section-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(78px, 1fr));gap:8px;}
   .section-tile{
-    aspect-ratio:1/1;background:var(--blue-600);border:1px solid var(--blue-600);border-radius:8px;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-    cursor:pointer;padding:7px 5px;text-align:center;transition:box-shadow .15s,background .15s;
+    aspect-ratio:1/1;background:var(--tile-bg,#eef2fb);border:1px solid var(--tile-bd,#d7e1fb);border-radius:10px;
+    color:var(--tile-fg,#1b3fae);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    cursor:pointer;padding:7px 5px;text-align:center;transition:transform .15s, box-shadow .15s, filter .15s;
   }
-  .section-tile:hover{box-shadow:inset 0 0 0 1px rgba(255,255,255,.35), var(--shadow);background:var(--navy-800);}
-  .section-tile-sec{font-size:8.5px;font-weight:700;letter-spacing:.03em;color:rgba(255,255,255,.75);text-transform:uppercase;}
-  .section-tile-label{font-size:9.5px;font-weight:700;color:#fff;line-height:1.2;}
+  .section-tile:hover{transform:translateY(-2px);box-shadow:var(--shadow);filter:saturate(1.25);}
+  .section-tile .ql-svg{stroke:currentColor;}
+  .section-tile-sec{font-size:8.5px;font-weight:700;letter-spacing:.03em;color:var(--tile-fg);opacity:.7;text-transform:uppercase;}
+  .section-tile-label{font-size:9.5px;font-weight:700;color:var(--tile-fg);line-height:1.2;}
 
   /* ---------- Collapsible group (procedure checklist, etc.) ---------- */
   .collapse-group{border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;}
@@ -495,11 +495,7 @@ let entries = [
     ]
   },
   /* -------------------------------------------------------------
-     Dummy DOPS (Sec.8) records — illustrative only, so that opening
-     "Log of Procedural Skills Acquirement (DOPS)" has enough entries
-     (10 here + the 2 real ones above = 12) to demonstrate the lesson
-     dropdown filter and pagination (8 rows/page) working correctly
-     out of the box, without waiting for real submissions to build up.
+     Dummy DOPS (Sec.8) records — illustrative only.
   ------------------------------------------------------------- */
   {
     id:9, title:"IV Cannulation — Difficult Access", type:"Clinical Procedure", chapterNo:8, lesson:"Peripheral Venous Access: Adult/Paediatric/Neonatal", daysPending:0,
@@ -734,36 +730,23 @@ const CURRICULUM_CHAPTERS = [
   { no:11, title:"Log of Research / Audit / Quality Improvement Work Done", route:"faculty_only", active:true,
     lessons:[
       "Publication / Research",
-      "Thesis Review",
       "Quality Improvement / Clinical Audit / Patient Safety Initiative",
     ]},
-  { no:12, title:"Resident Self-Evaluation", route:"self_only", active:true,
+  { no:12, title:"Self-Evaluation", route:"self_only", active:true,
     lessons:[
-      "Self Reflection",
       "Awards & Achievement",
-      "Others",
+      "Self Reflection",
+      "Thesis Review",
     ]},
 ];
 /* ---------------------------------------------------------------
    chaptersAuthorableBy — which sections a role can CREATE a record
-   under (browsing/reviewing access to sections is common to every
-   role via the sidebar and Quick Links; this only governs the
-   Create-Entry Section dropdown). JR can author under any active
-   section. SR and Faculty are both limited to the sections that
-   route straight to Faculty, are self-certified (no reviewer above
-   them), or are Self-Certified/No-Review — i.e. academic/self-
-   development record types — since the supervised clinical
-   sections (Skill Training, CBD/Mini-CEX, DOPS, Diagnostic Skills)
-   are JR activity that SR/Faculty review, not author themselves.
+   under. JR: every active section. SR: sections that route straight
+   to Faculty, SR-only, or are self-certified. Faculty: every active
+   section (own entries self-certify).
 --------------------------------------------------------------- */
 function chaptersAuthorableBy(persona){
   const active = CURRICULUM_CHAPTERS.filter(c=>c.active!==false);
-  /* Faculty maintain their own complete personal logbook, the same
-     as JR/SR do for theirs — full access to every active section.
-     Their own entries always self-certify straight to "Faculty
-     Approved" on submission (see buildEntryFromForm/submitForRoute),
-     since there's no reviewer above Faculty in this workflow,
-     regardless of which section the entry falls under. */
   if(persona==="sr") return active.filter(c=>c.route!=="sr_faculty");
   return active;
 }
@@ -1021,47 +1004,14 @@ let procedureProgress = {
 };
 
 /* ---------------------------------------------------------------
-   MULTI-SOURCE FEEDBACK (MSF) — the resident requests feedback from
-   an assessor of their choice via a single common picker (no
-   separate "role" question), AND separately picks a Chief Guide
-   from a dropdown. The assessor fills and submits the standard MSF
-   rating form; once submitted, the response is visible ONLY to the
-   Chief Guide the resident selected (confidential, per the MSF
-   form's own note) — never to the resident being assessed.
+   MULTI-SOURCE FEEDBACK (MSF) — separate module. Starts empty.
 --------------------------------------------------------------- */
-let msfRequests = [
-  {
-    id:1, candidate:"Dr. Aastha Tiwari", candidateRole:"jr",
-    assessor:"Dr. Pooja Raj", assessorRole:"Senior Resident",
-    chiefGuide:"Dr. Akshay Kumar", interaction:"Frequent",
-    status:"Submitted", requestedAt:"2026-06-01", submittedAt:"2026-06-05", updatedAt:1,
-    ratings:{comm:"Exceeds Expectations",prof:"Meets Expectations",team:"Exceeds Expectations",reliability:"Meets Expectations",leadership:"Meets Expectations",overall:"Meets Expectations"},
-    doingWell:"Communicates clearly with the team during resuscitations and stays calm under pressure.",
-    improve:"Could delegate tasks earlier during multi-patient surges.",
-    concerns:"No", concernDetails:""
-  },
-  {
-    id:2, candidate:"Dr. Aastha Tiwari", candidateRole:"jr",
-    assessor:"Dr. Sheena Arora", assessorRole:"Senior Resident",
-    chiefGuide:"Dr. Akshay Kumar", interaction:"",
-    status:"Pending Response", requestedAt:"2026-07-10", submittedAt:null, updatedAt:2,
-    ratings:{}, doingWell:"", improve:"", concerns:"", concernDetails:""
-  },
-];
-let msfCounter = Math.max(...msfRequests.map(r=>r.id));
+let msfRequests = [];
+let msfCounter = 0;
 
 /* ---------------------------------------------------------------
-   SELF-REFLECTION — integrated directly into Sec.12's own "Self
-   Reflection" lesson rather than living as a separate module. When
-   Section = Resident Self-Evaluation and Lesson = Self Reflection is
-   picked on the normal Create Entry screen, the form swaps its
-   Description/"What did you learn?" fields for this structured
-   6-domain form (mirroring the Doctor Self-Evaluation & Reflection
-   sheet) and saves as a normal entry — so it shows up in Sec.12's
-   own log, in Manage My Entries, and counts in the Directory's
-   Sec.12 totals, exactly like Awards & Achievement / Others do.
-   No separate screen, no separate data store, no attachment field
-   (removed per request).
+   SELF-REFLECTION — structured 6-domain form shown when
+   Section = Self-Evaluation and Lesson = Self Reflection.
 --------------------------------------------------------------- */
 const SELF_EVAL_AREAS = [
   {key:"clinical", label:"Clinical Care & Decision-Making", desc:"I assess, prioritize and manage emergency patients safely, seek senior help appropriately, and recognize my limitations."},
@@ -1074,12 +1024,7 @@ const SELF_EVAL_AREAS = [
 const SELF_EVAL_SCALE = ["Needs Improvement","Developing","Meeting Expectations","Doing Well"];
 
 /* ---------------------------------------------------------------
-   COMMON DASHBOARD — same layout & review-flow strip for every role.
-   One "primary action" button (role-appropriate), a pair of pastel
-   quick-action buttons above the Quick Links row (Add Log / Review
-   Pending, role-scoped), one clickable 4-stage review-flow strip
-   (Created → SR Review → Faculty Review → Approved) scoped to what
-   that role can see, and one recent-entries table.
+   COMMON DASHBOARD
 --------------------------------------------------------------- */
 function bucketCounts(list){
   return {
@@ -1103,12 +1048,6 @@ const SECTION_META = {
 function sectionMeta(ch){
   return SECTION_META[ch.no] || { short: ch.title.replace(/^Log of\s*/i,"") };
 }
-/* ---------------------------------------------------------------
-   ROTATION_META — same square tile treatment used for "All
-   Sections" is reused here so Core Curriculum's topic browser and
-   the Rotation Posting Master List look and behave identically to
-   the section grid, instead of each screen inventing its own style.
---------------------------------------------------------------- */
 const ROTATION_META = {
   "Emergency Medicine":{short:"Emergency Medicine"},
   "Surgical Emergency":{short:"Surgical Emergency"},
@@ -1139,13 +1078,6 @@ const ROTATION_META = {
 function rotationMeta(name){
   return ROTATION_META[name] || { short: name.split(" ").slice(0,2).join(" ") };
 }
-/* ---------------------------------------------------------------
-   ICON_SET — small inline SVG line icons, styled after healthicons.org
-   (minimal, white, monochrome outline). Kept inline (no external
-   fetch) so the prototype has no network dependency. One icon per
-   Quick Link purpose; a generic clipboard/document icon for section
-   and topic tiles, since they're all "a log to browse into".
---------------------------------------------------------------- */
 function svgIcon(path, viewBox){
   return `<svg class="ql-svg" viewBox="${viewBox||'0 0 24 24'}" width="14" height="14" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 }
@@ -1162,6 +1094,25 @@ const ICONS = {
   settings:  svgIcon('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
   doc:       svgIcon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>'),
 };
+/* ---------------------------------------------------------------
+   PASTELS — soft background / deep text / light border trios used
+   by Quick Links, Section tiles and Rotation/Topic tiles.
+--------------------------------------------------------------- */
+const PASTELS = [
+  {bg:"#e8f0fe", fg:"#2a4fc9", bd:"#cfdcfb"}, // blue
+  {bg:"#e6f6ef", fg:"#0e7d5f", bd:"#c6ead9"}, // mint
+  {bg:"#fdf0e4", fg:"#a85a12", bd:"#f6dcc2"}, // peach
+  {bg:"#f3ecfb", fg:"#6b3fb0", bd:"#e0d2f4"}, // lavender
+  {bg:"#fdebef", fg:"#b3365a", bd:"#f6ccd7"}, // rose
+  {bg:"#e6f5f8", fg:"#127185", bd:"#c4e6ee"}, // aqua
+  {bg:"#fbf6dd", fg:"#866b06", bd:"#efe3a8"}, // butter
+  {bg:"#eef3e2", fg:"#4e6b1d", bd:"#d8e4bd"}, // sage
+  {bg:"#f0eef7", fg:"#4b4f8a", bd:"#dcd9ee"}, // periwinkle
+];
+function pastelStyle(i){
+  const p = PASTELS[((i % PASTELS.length) + PASTELS.length) % PASTELS.length];
+  return `--tile-bg:${p.bg};--tile-fg:${p.fg};--tile-bd:${p.bd};`;
+}
 const QUICKLINK_ICON_MAP = {
   "My Portfolio":"portfolio", "My Activity":"portfolio",
   "Core Curriculum":"book",
@@ -1174,7 +1125,6 @@ const QUICKLINK_ICON_MAP = {
   "Directory — All Profiles":"people",
   "Faculty & Resident Directory":"people",
   "Case Type Settings":"settings",
-  "Self-Evaluation":"clipboard",
   "Multi-Source Feedback":"people",
 };
 function quickLinkIcon(label){
@@ -1182,9 +1132,9 @@ function quickLinkIcon(label){
 }
 function topicTileGridHTML(names, onClickFn){
   return `<div class="section-grid">
-    ${names.map(n=>{
+    ${names.map((n,i)=>{
       const m = rotationMeta(n);
-      return `<div class="section-tile" onclick="${onClickFn}" title="${n}">
+      return `<div class="section-tile" style="${pastelStyle(i)}" onclick="${onClickFn}" title="${n}">
         ${ICONS.doc}
         <div class="section-tile-label">${m.short}</div>
       </div>`;
@@ -1199,14 +1149,14 @@ function quickLinksHTML(links, sections, pastelLinks){
       ${pastelLinks.map(q=>`<button class="btn ${q.cls} btn-sm" onclick="goto('${q.screen}')">${q.label}</button>`).join("")}
     </div>` : ""}
     <div style="display:flex;gap:10px;flex-wrap:wrap;${activeSections.length?'margin-bottom:16px;':''}">
-      ${links.map(q=>`<button class="btn btn-quicklink btn-sm" onclick="goto('${q.screen}'${q.param!==undefined?`, null, '${q.param.replace(/'/g,"\\'")}'`:''})">${quickLinkIcon(q.label)}<span class="ql-label">${q.label}</span></button>`).join("")}
+      ${links.map((q,i)=>`<button class="btn btn-quicklink btn-sm" style="${pastelStyle(i)}" onclick="goto('${q.screen}'${q.param!==undefined?`, null, '${q.param.replace(/'/g,"\\'")}'`:''})">${quickLinkIcon(q.label)}<span class="ql-label">${q.label}</span></button>`).join("")}
     </div>
     ${activeSections.length ? `
     <div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-400);font-weight:700;margin:4px 0 10px;">All Sections <span style="text-transform:none;letter-spacing:0;font-weight:500;">— ${activeSections.length} active, common to JR / SR / Faculty</span></div>
     <div class="section-grid">
       ${activeSections.map(c=>{
         const m = sectionMeta(c);
-        return `<div class="section-tile" onclick="goto('sectionLog', null, ${c.no})" title="${c.title}">
+        return `<div class="section-tile" style="${pastelStyle(c.no - 5)}" onclick="goto('sectionLog', null, ${c.no})" title="${c.title}">
           <div class="section-tile-sec">Sec.${c.no}</div>
           ${ICONS.clipboard}
           <div class="section-tile-label">${m.short}</div>
@@ -1218,11 +1168,6 @@ function quickLinksHTML(links, sections, pastelLinks){
 function dashboardRecentData(persona){
   if(persona==="jr") return myEntries("jr");
   if(persona==="sr" || persona==="faculty"){
-    /* Combine BOTH this role's own authored entries AND entries
-       assigned to them for review into one filterable window —
-       previously this only showed one or the other, but now that
-       SR and Faculty can each author their own records as well as
-       review others', the dashboard should surface both together. */
     const own = myEntries(persona);
     const assigned = assignedTo(persona);
     const byId = new Map();
@@ -1254,7 +1199,6 @@ function screenDashboard(){
       {label:"Core Curriculum", screen:"coreCurriculum"},
       {label:"Goals of Posting", screen:"goalsPosting"},
       {label:"Clinical Rotations", screen:"rotationLog"},
-      {label:"Self-Evaluation", screen:"createEntry", param:"12::Self Reflection"},
       {label:"Multi-Source Feedback", screen:"msf"},
       {label:"Manage My Entries", screen:"manageEntries"},
       {label:"Export Logbook", screen:"exportLogbook"},
@@ -1282,7 +1226,6 @@ function screenDashboard(){
       {label:"Core Curriculum", screen:"coreCurriculum"},
       {label:"Goals of Posting", screen:"goalsPosting"},
       {label:"Clinical Rotations", screen:"rotationLog"},
-      {label:"Self-Evaluation", screen:"createEntry", param:"12::Self Reflection"},
       {label:"Multi-Source Feedback", screen:"msf"},
       {label:"Manage My Entries", screen:"manageEntries"},
       {label:"Export Logbook", screen:"exportLogbook"},
@@ -1306,7 +1249,6 @@ function screenDashboard(){
     recentLabel = "My Entries &amp; Entries Assigned to Me";
     quickLinks = [
       {label:"My Activity", screen:"residentLogbook", param:PERSONA_NAMES.faculty},
-      {label:"Self-Evaluation", screen:"createEntry", param:"12::Self Reflection"},
       {label:"Multi-Source Feedback", screen:"msf"},
       {label:"Manage My Entries", screen:"manageEntries"},
       {label:"All Resident Logs", screen:"allLogs"},
@@ -1353,19 +1295,7 @@ const statusMeta = {
   "Faculty Approved":{cls:"st-approved", stage:3}
 };
 /* ---------------------------------------------------------------
-   DYNAMIC STEPPER — the review-stepper shown on an entry's detail
-   page is derived live from THAT entry's actual route, not a fixed
-   4-step template. An entry logged under a Faculty-only section
-   (e.g. Sec.5 Academic Activity, Sec.11 Research/QI) never passes
-   through Senior Resident review, so its stepper correctly shows
-   only 3 steps (Entry Creation → Faculty Review → Final Approval).
-   An entry logged under a Self-Certified section (Sec.12, Resident
-   Self-Evaluation) shows just 2 steps — Entry Creation → Completed
-   — since no one reviews it. Same skip-SR treatment applies to any
-   Senior-Resident-authored entry, regardless of section. Everything
-   else (the standard SR → Faculty sections) shows the full 4-step
-   path. Newly added Admin sections plug into this automatically via
-   their `route` field — nothing to hard-code per section.
+   DYNAMIC STEPPER — derived live from THAT entry's actual route.
 --------------------------------------------------------------- */
 const FULL_STAGE_MAP = {"New":0,"In SR Review":1,"SR Requested Changes":1,"SR Approved":1,"In Faculty Review":2,"Faculty Requested Changes":2,"Faculty Rejected":2,"Faculty Approved":3};
 const SKIP_SR_STAGE_MAP = {"New":0,"In Faculty Review":1,"Faculty Requested Changes":1,"Faculty Rejected":1,"Faculty Approved":2};
@@ -1393,7 +1323,7 @@ function stageConfig(e){
     : { labels:["Entry Creation","Senior Resident Review","Faculty Review","Final Approval"], map: FULL_STAGE_MAP };
 }
 
-let state = { persona:"jr", screen:"dashboard", entryId:null, filter:"all", searchTerms:{}, navParam:null, exportScope:"all" };
+let state = { persona:"jr", screen:"dashboard", entryId:null, filter:"all", searchTerms:{}, navParam:null, exportScope:"all", lastPick:null };
 function setExportScope(val){ state.exportScope = val; renderAll(); }
 let history = [];
 let formState = { reviewerSelected:[], reviewerQuery:"" };
@@ -1414,7 +1344,7 @@ function sortByUpdated(list){ return [...list].sort((a,b)=> b.updatedAt - a.upda
 
 function setPersona(p){
   state.persona = p; state.screen = "dashboard"; state.entryId = null; state.filter = "all";
-  history = []; state.searchTerms = {}; state.exportScope = "all"; state.categoryFilter = {}; state.lessonFilter = {};
+  history = []; state.searchTerms = {}; state.exportScope = "all"; state.categoryFilter = {}; state.lessonFilter = {}; state.lastPick = null;
   renderAll();
 }
 function goto(screen, id, param){
@@ -1526,10 +1456,7 @@ function renderList(id, q){
 }
 
 /* ---------------------------------------------------------------
-   SHARED PAGINATION — every submissions list in the app (Manage My
-   Entries, Review Queue, All Resident Logs, Admin All Entries, and
-   each section's own Logs table) is sorted newest-updated-first and
-   paginated the same way, so behaviour is identical everywhere.
+   SHARED PAGINATION
 --------------------------------------------------------------- */
 function getPage(id){ return (state.page && state.page[id]) || 1; }
 function setPage(id, page){ state.page = state.page || {}; state.page[id] = page; }
@@ -1567,7 +1494,6 @@ function sidebarHTML(){
     return `<div class="side-item clickable ${active?'active':''}" onclick="goto('sectionLog', null, ${chNo})" title="${ch.title}"><span class="dot"></span>${label}</div>`;
   };
   const sectionsFor = (persona) => CURRICULUM_CHAPTERS.filter(c=>c.active!==false).map(c=>c.no);
-  const selfEvalActive = state.screen==="createEntry" && state.navParam==="12::Self Reflection";
 
   let roleNav = "";
   if(p==="jr"){
@@ -1578,7 +1504,6 @@ function sidebarHTML(){
       ${item("Goals of Clinical Posting","goalsPosting", state.screen==="goalsPosting")}
       ${item("Log of Clinical Rotations","rotationLog", state.screen==="rotationLog")}
       ${sectionsFor("jr").map(sectionItem).join("")}
-      ${item("Self-Evaluation","createEntry", selfEvalActive, "12::Self Reflection")}
       ${item("Multi-Source Feedback (MSF)","msf", state.screen==="msf")}
       ${item("Manage My Entries","manageEntries", state.screen==="manageEntries")}
       ${item("Export Logbook","exportLogbook", state.screen==="exportLogbook")}
@@ -1591,7 +1516,6 @@ function sidebarHTML(){
       ${item("Goals of Clinical Posting","goalsPosting", state.screen==="goalsPosting")}
       ${item("Log of Clinical Rotations","rotationLog", state.screen==="rotationLog")}
       ${sectionsFor("sr").map(sectionItem).join("")}
-      ${item("Self-Evaluation","createEntry", selfEvalActive, "12::Self Reflection")}
       ${item("Multi-Source Feedback (MSF)","msf", state.screen==="msf")}
       ${item("Manage My Entries","manageEntries", state.screen==="manageEntries")}
       ${item("Review Assigned Entries","reviewQueue", state.screen==="reviewQueue")}
@@ -1604,7 +1528,6 @@ function sidebarHTML(){
       ${item("Core Curriculum of EM","coreCurriculum", state.screen==="coreCurriculum")}
       ${item("Goals of Clinical Posting","goalsPosting", state.screen==="goalsPosting")}
       ${sectionsFor("faculty").map(sectionItem).join("")}
-      ${item("Self-Evaluation","createEntry", selfEvalActive, "12::Self Reflection")}
       ${item("Multi-Source Feedback (MSF)","msf", state.screen==="msf")}
       ${item("Manage My Entries","manageEntries", state.screen==="manageEntries")}
       ${item("Review Assigned Entries","reviewQueue", state.screen==="reviewQueue")}
@@ -1624,7 +1547,6 @@ function sidebarHTML(){
 
   return `
     <div class="side-item static"><span class="dot"></span>Site home</div>
-    <div class="side-item active"><span class="dot"></span>Dashboard</div>
     <div class="side-item static"><span class="dot"></span>Calendar</div>
     <div class="side-item clickable ${state.screen==='privateFiles'?'active':''}" onclick="goto('privateFiles')"><span class="dot"></span>Private files</div>
     <div class="side-item static"><span class="dot"></span>Content bank</div>
@@ -1649,12 +1571,7 @@ function reviewerFieldHTML(optional){
     </div>`;
 }
 /* ---------------------------------------------------------------
-   DOPS_TARGET_HINTS — when Section = Log of Procedural Skills
-   Acquirement (DOPS) and a Lesson/Topic is picked on Create Entry,
-   the expected minimum number of submissions for that skill (per
-   the Core Competencies reference sheet) is shown in bold right
-   under the dropdown, so the resident sees at a glance what they're
-   working toward before they even start typing.
+   DOPS_TARGET_HINTS — expected minimum submissions per DOPS skill.
 --------------------------------------------------------------- */
 const DOPS_TARGET_HINTS = {
   "Airway Management: Adult/Trauma/Non-Trauma/Surgical/Alternate Techniques/Paediatric/Neonatal": "100 (BVM/Ventilation/Intubation) · 5 (Alternate techniques – LMA/I-gel) · 5 (Surgical airway)",
@@ -1708,23 +1625,34 @@ function dopsTargetHintHTML(chNo, lesson){
 function screenCreateEntry(){
   const persona = state.persona;
   const rawParam = state.navParam;
-  let lockChapterNo = rawParam, lockLesson = null;
+  /* Pre-select Section / Lesson (never locked):
+     1) from the section page you came from (+ its Lesson filter, if picked)
+     2) otherwise from your last choice in this session */
+  let preChNo = null, preLesson = null;
   if(typeof rawParam === "string" && rawParam.includes("::")){
     const idx = rawParam.indexOf("::");
-    lockChapterNo = Number(rawParam.slice(0, idx));
-    lockLesson = rawParam.slice(idx+2);
+    preChNo = Number(rawParam.slice(0, idx));
+    preLesson = rawParam.slice(idx+2) || null;
+  } else if(rawParam){
+    preChNo = Number(rawParam);
+  } else if(state.lastPick){
+    preChNo = state.lastPick.chNo;
+    preLesson = state.lastPick.lesson;
   }
-  const availableChapters = lockChapterNo ? [chapterByNo(lockChapterNo)].filter(Boolean) : chaptersAuthorableBy(persona);
-  const selectedChapter = availableChapters[0];
-  const chapterOptions = availableChapters.map(c=>`<option value="${c.no}">${c.title}</option>`).join("");
+  const availableChapters = chaptersAuthorableBy(persona);
+  const selectedChapter = availableChapters.find(c=>c.no===preChNo) || availableChapters[0];
+  const fromPreset = !!(selectedChapter && selectedChapter.no===preChNo);
+  const chapterOptions = availableChapters.map(c=>`<option value="${c.no}" ${selectedChapter && c.no===selectedChapter.no?'selected':''}>${c.title}</option>`).join("");
   const lessonList = selectedChapter ? selectedChapter.lessons : [];
-  const initialLesson = (lockLesson && lessonList.includes(lockLesson)) ? lockLesson : (lessonList[0] || "");
+  const defaultLesson = (selectedChapter && selectedChapter.no===12 && lessonList.includes("Self Reflection")) ? "Self Reflection" : (lessonList[0] || "");
+  const initialLesson = (fromPreset && preLesson && lessonList.includes(preLesson)) ? preLesson : defaultLesson;
   const lessonOptions = lessonList.map(l=>`<option value="${l}" ${l===initialLesson?'selected':''}>${l}</option>`).join("");
   const route = selectedChapter ? selectedChapter.route : "sr_faculty";
   const isSelfReflection = !!(selectedChapter && selectedChapter.no===12 && initialLesson==="Self Reflection");
+  if(selectedChapter) state.lastPick = { chNo: selectedChapter.no, lesson: initialLesson };
   return `
     <div class="page-head">
-      <div><h1>Create E-Logbook Entry</h1><p>${lockChapterNo ? `New log under <b>${selectedChapter ? selectedChapter.title : ""}</b>.${lockLesson?` Lesson set to <b>${lockLesson}</b>.`:""}` : "Record a clinical case, procedure, or learning activity for review."}</p></div>
+      <div><h1>Create E-Logbook Entry</h1><p>${fromPreset ? `New log under <b>${selectedChapter.title}</b>${initialLesson?` — <b>${initialLesson}</b>`:""}. Pre-selected for you — change below if needed.` : "Record a clinical case, procedure, or learning activity for review."}</p></div>
     </div>
     ${!navigator.onLine ? `<div class="banner"><b>No internet detected</b> — keep filling this in as usual. Save as Draft / Submit will capture it offline and sync automatically the moment you're back online (useful on the ED floor with weak signal).</div>` : ""}
     <div class="card">
@@ -1732,15 +1660,15 @@ function screenCreateEntry(){
       <div class="form-grid">
         <div class="field">
           <label>Section</label>
-          <select id="chapterSelect" onchange="onChapterChange()" ${lockChapterNo?'disabled':''}>${chapterOptions}</select>
-          ${lockChapterNo ? `<div class="hint" style="margin-top:6px;">Section is fixed because you opened this from that section's log.${lockLesson? '' : ' Just pick the Lesson / Topic below.'}</div>` : ""}
-          ${(!lockChapterNo && persona==="sr") ? `<div class="hint" style="margin-top:6px;">"Log of Clinical Case Based Discussion (CBD) & Examination (Mini-CEX)", "Log of Procedural Skills Acquirement (DOPS)" and "Log of Diagnostic Skills" are not available here — those remain Junior Resident submissions that you review. Your own entries are limited to the sections routed directly to Faculty, SR-only, or self-certified.</div>` : ""}
-          ${(!lockChapterNo && persona==="faculty") ? `<div class="hint" style="margin-top:6px;">You maintain a complete personal logbook across every section, the same as Junior and Senior Residents do for theirs. Your own entries self-certify straight to Faculty Approved on submission — no reviewer assignment needed.</div>` : ""}
+          <select id="chapterSelect" onchange="onChapterChange()">${chapterOptions}</select>
+          ${fromPreset ? `<div class="hint" style="margin-top:6px;">Pre-selected from your current section — change it here if needed.</div>` : ""}
+          ${(!fromPreset && persona==="sr") ? `<div class="hint" style="margin-top:6px;">"Log of Clinical Case Based Discussion (CBD) & Examination (Mini-CEX)", "Log of Procedural Skills Acquirement (DOPS)" and "Log of Diagnostic Skills" are not available here — those remain Junior Resident submissions that you review. Your own entries are limited to the sections routed directly to Faculty, SR-only, or self-certified.</div>` : ""}
+          ${(!fromPreset && persona==="faculty") ? `<div class="hint" style="margin-top:6px;">You maintain a complete personal logbook across every section, the same as Junior and Senior Residents do for theirs. Your own entries self-certify straight to Faculty Approved on submission — no reviewer assignment needed.</div>` : ""}
         </div>
         <div class="field">
           <label>Lesson / Topic</label>
-          <select id="lessonSelect" onchange="onLessonChange()" ${lockLesson?'disabled':''}>${lessonOptions}</select>
-          <div class="hint">${lockLesson ? "Fixed for this shortcut." : "Populated automatically from the selected Section — select the specific lesson/topic this entry covers. Picking \"Self Reflection\" under Resident Self-Evaluation switches this form to the structured self-evaluation fields below."}</div>
+          <select id="lessonSelect" onchange="onLessonChange()">${lessonOptions}</select>
+          <div class="hint">Populated automatically from the selected Section — select the specific lesson/topic this entry covers. Picking "Self Reflection" under Self-Evaluation switches this form to the structured self-evaluation fields below.</div>
           <div id="dopsTargetHint">${dopsTargetHintHTML(selectedChapter?selectedChapter.no:null, initialLesson)}</div>
         </div>
         <div class="field"><label>Title</label><input type="text" id="caseTitleInput" placeholder="e.g. ST-Elevation MI — ED Resuscitation, or a period label like Apr–Jun 2026"></div>
@@ -1807,7 +1735,7 @@ function screenCreateEntry(){
     </div>` : `
     <div class="card" id="reviewerCard" style="${route==='self_only'?'display:none;':''}">
       <h3>Reviewer Assignment <small>selected from the full active Senior Resident &amp; Faculty directory</small></h3>
-      <div class="hint" id="routeHint" style="margin-bottom:12px;">${route==='self_only' ? "This section does not require Senior Resident or Faculty review — it's saved directly as your own record." : "Tag one or more Senior Residents and/or Faculty members to review this entry (optional)."}</div>
+      <div class="hint" id="routeHint" style="margin-bottom:12px;">${routeHintText(route)}</div>
       <div class="form-grid">
         ${reviewerFieldHTML(true)}
       </div>
@@ -1815,7 +1743,7 @@ function screenCreateEntry(){
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="goBack()">Cancel</button>
       <button class="btn btn-ghost" onclick="saveEntryDraft()">Save as Draft</button>
-      <button class="btn btn-primary" onclick="submitForRoute()">${persona==="faculty" ? "Submit & Self-Certify" : route==="self_only" ? "Save Entry" : "Submit for Review"}</button>
+      <button class="btn btn-primary" onclick="submitForRoute()">${persona==="faculty" ? "Submit & Self-Certify" : submitButtonLabel(route)}</button>
     </div>
   `;
 }
@@ -1832,6 +1760,7 @@ function onChapterChange(){
   const ch = chapterByNo(chNo);
   const lessonSel = document.getElementById("lessonSelect");
   lessonSel.innerHTML = ch ? ch.lessons.map(l=>`<option value="${l}">${l}</option>`).join("") : "";
+  if(ch && ch.no===12 && ch.lessons.includes("Self Reflection")) lessonSel.value = "Self Reflection";
   onLessonChange();
   if(state.persona==="faculty") return;
   const route = ch ? ch.route : "sr_faculty";
@@ -1850,6 +1779,7 @@ function onLessonChange(){
   const chNo = document.getElementById("chapterSelect")?.value;
   const lesson = document.getElementById("lessonSelect")?.value;
   const ch = chapterByNo(chNo);
+  if(ch) state.lastPick = { chNo: ch.no, lesson: lesson || "" };
   const isSelfReflection = !!(ch && ch.no===12 && lesson==="Self Reflection");
   const generic = document.getElementById("genericEntryFields");
   const srf = document.getElementById("selfReflectionFields");
@@ -1991,15 +1921,6 @@ function submitForRoute(){
 function screenManageEntries(){
   const filter = state.filter || "all";
   const persona = state.persona;
-  /* Status tabs are scoped to what's actually reachable for THIS
-     role's own entries — showing a tab that can never have results
-     is misleading. JR entries can go through the full SR->Faculty
-     path (depending on section), so JR keeps every status. SR's own
-     entries always route straight to Faculty (never "In SR Review"),
-     and Faculty's own entries are self-certified on submission
-     (only ever "New" as a draft, or "Faculty Approved"). Both JR and
-     SR can also have "Completed" entries under self-certified
-     sections (Sec.12 — Resident Self-Evaluation). */
   const statuses = persona==="faculty"
     ? ["all","New","Faculty Approved"]
     : persona==="sr"
@@ -2273,6 +2194,8 @@ function sectionVisibleEntries(chNo, persona){
     : (persona==="faculty") ? entries.filter(e=>e.chapterNo===chNo && e.faculty.includes(PERSONA_NAMES.faculty))
     : entries.filter(e=>e.chapterNo===chNo);
 }
+/* Empty state no longer repeats the "+ Add Record" button — the
+   single button lives in the section page header above. */
 function sectionEmptyStateHTML(ch){
   const persona = state.persona;
   const canCreate = persona==="jr" || chaptersAuthorableBy(persona).some(c=>c.no===ch.no);
@@ -2280,18 +2203,9 @@ function sectionEmptyStateHTML(ch){
   const lessonVal = (state.lessonFilter && state.lessonFilter[pgId]) || "";
   return `<div class="empty" style="padding:34px 20px;">
     ${lessonVal ? `No records logged yet under "<b>${lessonVal}</b>".` : `No records logged yet in <b>${ch.title}</b>.`}
-    ${canCreate ? `<div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="goto('createEntry', null, ${ch.no})">+ Add Record</button></div><div style="margin-top:8px;color:var(--text-400);">Click above to log the first entry for this section.</div>` : `<div style="margin-top:8px;color:var(--text-400);">This section is reviewed by you, not authored — records will appear here once submitted.</div>`}
+    ${canCreate ? `<div style="margin-top:8px;color:var(--text-400);">Click above to log the first entry for this section.</div>` : `<div style="margin-top:8px;color:var(--text-400);">This section is reviewed by you, not authored — records will appear here once submitted.</div>`}
   </div>`;
 }
-/* ---------------------------------------------------------------
-   sectionFilterHTML — the exact same filter panel style used on
-   Manage My Entries / Review Queue / All Resident Logs / Admin All
-   Entries / Dashboard Recent Entries: a search box plus a dependent
-   dropdown, feeding the same registerList/renderList/pagination
-   pipeline. The only difference here is the Section is already
-   fixed (you're inside one), so only the Lesson/Topic side of the
-   cascade is shown — no redundant "All Sections" selector.
---------------------------------------------------------------- */
 function sectionFilterHTML(id, ch){
   const val = state.searchTerms[id] || "";
   const lessonVal = (state.lessonFilter && state.lessonFilter[id]) || "";
@@ -2314,11 +2228,13 @@ function screenSectionLog(){
   const persona = state.persona;
   const canCreate = persona==="jr" || chaptersAuthorableBy(persona).some(c=>c.no===ch.no);
   const pgId = "sectionLogs_"+chNo;
+  const lv = (state.lessonFilter && state.lessonFilter[pgId]) || "";
+  const addParam = lv ? `'${ch.no}::${lv.replace(/'/g,"\\'")}'` : ch.no;
 
   return `
     <div class="page-head">
       <div><h1>${ch.title}</h1><p>All logs recorded under this section &middot; ${ch.lessons.length} lesson${ch.lessons.length===1?'':'s'} available</p></div>
-      ${canCreate ? `<button class="btn btn-primary" onclick="goto('createEntry', null, ${ch.no})">+ Add Record</button>` : ""}
+      ${canCreate ? `<button class="btn btn-primary" onclick="goto('createEntry', null, ${addParam})">+ Add Record</button>` : ""}
     </div>
     <div class="card">
       <h3 style="margin:0 0 14px;">Logs <small>sorted by most recently updated</small></h3>
@@ -2380,16 +2296,6 @@ function residentCompletionPct(name){
 
 /* ---------------------------------------------------------------
    NAME-WISE CONSOLIDATED RESIDENT LOGBOOK (Faculty / Admin view)
-   — Faculty need to open any individual resident's full portfolio,
-     not just entries formally assigned to them. For the one resident
-     with real seeded data (Dr. Aastha Tiwari as JR, Dr. Pooja Raj as
-     SR) this is built from the live `entries`/`rotationLog`/
-     `procedureProgress` arrays. For every OTHER resident in the
-     roster — including a brand-new "dummy" user with no entries at
-     all yet — a deterministic, seeded synthetic portfolio is
-     generated on the fly so Faculty can see exactly how the
-     consolidated view will populate once that resident starts
-     logging. Synthetic data is clearly labelled "Demo Data".
 --------------------------------------------------------------- */
 function mulberry32(seed){
   let a = seed >>> 0;
@@ -2407,8 +2313,8 @@ const TITLE_BANK = {
   8:["DOPS — Central Line Insertion","DOPS — Chest Tube","DOPS — Lumbar Puncture"],
   9:["POCUS — FAST Scan","ECG Analysis — Arrhythmia Series"],
   10:["ATLS Course","Difficult Airway Workshop","National EM Conference — Poster"],
-  11:["Audit — Door-to-Needle Time","Thesis Review — Progress Update"],
-  12:["Self Reflection — Q2","Awards & Achievement — Poster Prize"],
+  11:["Audit — Door-to-Needle Time"],
+  12:["Self Reflection — Q2","Awards & Achievement — Poster Prize","Thesis Review — Progress Update"],
 };
 function isRealResident(name){ return name===PERSONA_NAMES.jr || name===PERSONA_NAMES.sr; }
 function residentChapterBreakdown(name, role){
@@ -2496,7 +2402,6 @@ function screenFacultyProfile(name){
       <div><h1>${name}${demoTag}</h1><p>${designation} · Emergency Medicine, AIIMS Delhi</p></div>
       <div style="display:flex;gap:10px;">
         <button class="btn btn-ghost btn-sm" onclick="toast('${name.replace(/'/g,"\\'")}\\'s review activity exported as PDF.')">Download Activity (PDF)</button>
-        <button class="btn btn-ghost btn-sm" onclick="goBack()">← Back</button>
       </div>
     </div>
     <div class="grid-stats">
@@ -2549,7 +2454,6 @@ function screenResidentLogbook(){
       <div><h1>${name}${demoTag}</h1><p>${roleLabel} · ${batchLabel} · Emergency Medicine, AIIMS Delhi</p></div>
       <div style="display:flex;gap:10px;">
         <button class="btn btn-ghost btn-sm" onclick="toast('${name.replace(/'/g,"\\'")}\\'s logbook downloaded as PDF.')">Download Logbook (PDF)</button>
-        <button class="btn btn-ghost btn-sm" onclick="goBack()">← Back</button>
       </div>
     </div>
     <div class="grid-stats">
@@ -2616,11 +2520,7 @@ function openResidentDrilldown(name){
 }
 
 /* ---------------------------------------------------------------
-   RESIDENT SECTION DRILL-DOWN (Faculty / Admin) — opened from a row
-   in the Section-wise Log Summary table above. Splits that one
-   resident's records in that one section into two lists: everything
-   they've added, and the subset that's been reviewed/approved (or,
-   for a self-certified section, marked Completed).
+   RESIDENT SECTION DRILL-DOWN (Faculty / Admin)
 --------------------------------------------------------------- */
 function openResidentSectionDrill(name, chNo){
   goto('residentSectionLog', null, chNo + '::' + name);
@@ -3181,7 +3081,7 @@ function screenWorkflowOverview(){
     </div>
     <div class="card">
       <h3>Sections Outside This Flow</h3>
-      <div class="kv"><div class="k">Resident Self-Evaluation (Sec.12)</div><div>Self-certified — saved directly on submission, no reviewer, no stepper beyond "Completed". The "Self Reflection" lesson swaps in a structured 6-domain form on the same Create Entry screen; Awards & Achievement and Others use the standard fields.</div></div>
+      <div class="kv"><div class="k">Self-Evaluation (Sec.12)</div><div>Self-certified — saved directly on submission, no reviewer, no stepper beyond "Completed". The "Self Reflection" lesson swaps in a structured 6-domain form on the same Create Entry screen; Awards & Achievement and Thesis Review use the standard fields.</div></div>
       <div class="kv"><div class="k">Multi-Source Feedback (MSF)</div><div>Candidate requests feedback from an assessor and selects a Chief Guide; once submitted, the response is visible only to that Chief Guide — not to the candidate.</div></div>
     </div>
   `;
